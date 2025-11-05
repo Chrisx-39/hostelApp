@@ -7,7 +7,11 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from datetime import date, timedelta
 from django.utils import timezone
-from .models import User, Room, Occupancy, Payment, Issue
+from .models import User, Room, Occupancy, Payment, Issue, EmailVerification
+from django.core.mail import send_mail
+from django.conf import settings
+from django.urls import reverse
+import re
 
 
 # ==================== DECORATORS ====================
@@ -56,6 +60,205 @@ def logout_view(request):
     logout(request)
     messages.info(request, 'You have been logged out successfully.')
     return redirect('login')
+
+
+@require_http_methods(["GET", "POST"])
+def register_view(request):
+    """Handle student self-registration with email verification"""
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+    
+    if request.method == 'POST':
+        # Get form data
+        username = request.POST.get('username', '').strip()
+        email = request.POST.get('email', '').strip()
+        password = request.POST.get('password')
+        password_confirm = request.POST.get('password_confirm')
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        phone = request.POST.get('phone', '').strip()
+        
+        # Validation
+        errors = []
+        
+        if not username or len(username) < 3:
+            errors.append('Username must be at least 3 characters long.')
+        
+        if User.objects.filter(username=username).exists():
+            errors.append('Username already exists.')
+        
+        if not email or not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+            errors.append('Please provide a valid email address.')
+        
+        if User.objects.filter(email=email).exists():
+            errors.append('Email already registered.')
+        
+        if not password or len(password) < 6:
+            errors.append('Password must be at least 6 characters long.')
+        
+        if password != password_confirm:
+            errors.append('Passwords do not match.')
+        
+        if not first_name or not last_name:
+            errors.append('First name and last name are required.')
+        
+        if errors:
+            for error in errors:
+                messages.error(request, error)
+            return render(request, 'hostel/register.html', {
+                'form_data': request.POST
+            })
+        
+        try:
+            # Create user account (inactive until email verification)
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+                first_name=first_name,
+                last_name=last_name,
+                role='student',
+                is_active=False,  # Inactive until email verified
+            )
+            user.phone = phone
+            user.save()
+            
+            # Create verification token
+            verification = EmailVerification.objects.create(user=user)
+            
+            # Send verification email
+            verification_url = request.build_absolute_uri(
+                reverse('verify_email', kwargs={'token': verification.token})
+            )
+            
+            email_subject = 'Verify Your Hostel Management Account'
+            email_message = f"""
+Hello {user.first_name},
+
+Thank you for registering at Hostel Management System!
+
+Please verify your email address by clicking the link below:
+{verification_url}
+
+This link will expire in 24 hours.
+
+If you did not create this account, please ignore this email.
+
+Best regards,
+Hostel Management Team
+            """
+            
+            try:
+                send_mail(
+                    email_subject,
+                    email_message,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [user.email],
+                    fail_silently=False,
+                )
+                messages.success(request, 
+                    'Registration successful! Please check your email to verify your account.')
+                return redirect('registration_success')
+            except Exception as e:
+                # If email fails, delete the user and show error
+                user.delete()
+                messages.error(request, 
+                    'Failed to send verification email. Please try again or contact support.')
+                print(f"Email error: {str(e)}")  # Log the error
+        
+        except Exception as e:
+            messages.error(request, f'Registration failed: {str(e)}')
+    
+    return render(request, 'hostel/register.html')
+
+
+def registration_success(request):
+    """Show registration success message"""
+    return render(request, 'hostel/registration_success.html')
+
+
+def verify_email(request, token):
+    """Verify email address using token"""
+    try:
+        verification = EmailVerification.objects.select_related('user').get(token=token)
+        
+        if verification.verified:
+            messages.info(request, 'Email already verified. Please login.')
+            return redirect('login')
+        
+        if verification.is_expired:
+            messages.error(request, 
+                'Verification link has expired. Please register again or contact support.')
+            return redirect('register')
+        
+        # Activate user account
+        user = verification.user
+        user.is_active = True
+        user.email_verified = True
+        user.save()
+        
+        # Mark verification as complete
+        verification.verified = True
+        verification.save()
+        
+        messages.success(request, 
+            'Email verified successfully! You can now login to your account.')
+        return redirect('login')
+    
+    except EmailVerification.DoesNotExist:
+        messages.error(request, 'Invalid verification link.')
+        return redirect('register')
+
+
+def resend_verification(request):
+    """Resend verification email"""
+    if request.method == 'POST':
+        email = request.POST.get('email', '').strip()
+        
+        try:
+            user = User.objects.get(email=email, is_active=False)
+            
+            # Invalidate old tokens
+            EmailVerification.objects.filter(user=user, verified=False).update(verified=True)
+            
+            # Create new verification token
+            verification = EmailVerification.objects.create(user=user)
+            
+            # Send verification email
+            verification_url = request.build_absolute_uri(
+                reverse('verify_email', kwargs={'token': verification.token})
+            )
+            
+            email_subject = 'Verify Your Hostel Management Account'
+            email_message = f"""
+Hello {user.first_name},
+
+Here is your new verification link:
+{verification_url}
+
+This link will expire in 24 hours.
+
+Best regards,
+Hostel Management Team
+            """
+            
+            send_mail(
+                email_subject,
+                email_message,
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+                fail_silently=False,
+            )
+            
+            messages.success(request, 'Verification email sent! Please check your inbox.')
+            return redirect('registration_success')
+        
+        except User.DoesNotExist:
+            messages.error(request, 'No unverified account found with this email.')
+        except Exception as e:
+            messages.error(request, f'Failed to send email: {str(e)}')
+    
+    return render(request, 'hostel/resend_verification.html')
 
 
 # ==================== DASHBOARD VIEW ====================
@@ -414,6 +617,113 @@ def payment_update_status(request, payment_id):
             messages.error(request, f'Error updating payment: {str(e)}')
     
     return redirect('payment_list')
+
+
+@login_required
+def student_payment_detail(request, payment_id):
+    """Student view for payment details and payment initiation"""
+    payment = get_object_or_404(Payment, id=payment_id)
+    
+    # Ensure student can only view their own payments
+    if request.user.role == 'student':
+        if payment.occupancy.student != request.user:
+            messages.error(request, 'You can only view your own payments.')
+            return redirect('payment_list')
+    
+    context = {
+        'payment': payment,
+    }
+    return render(request, 'hostel/student_payment_detail.html', context)
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def student_make_payment(request, payment_id):
+    """Student submits proof of payment"""
+    payment = get_object_or_404(Payment, id=payment_id)
+    
+    # Security check
+    if request.user.role == 'student' and payment.occupancy.student != request.user:
+        messages.error(request, 'You can only pay your own bills.')
+        return redirect('payment_list')
+    
+    # Check if already paid
+    if payment.status == 'completed':
+        messages.info(request, 'This payment has already been completed.')
+        return redirect('student_payment_detail', payment_id=payment.id)
+    
+    if request.method == 'POST':
+        payment_method = request.POST.get('payment_method')
+        proof_file = request.FILES.get('proof_of_payment')
+        reference_number = request.POST.get('reference_number', '').strip()
+        
+        # Validation
+        if not payment_method:
+            messages.error(request, 'Please select a payment method.')
+            return render(request, 'hostel/student_make_payment.html', {'payment': payment})
+        
+        if not proof_file:
+            messages.error(request, 'Please upload proof of payment (screenshot or receipt).')
+            return render(request, 'hostel/student_make_payment.html', {'payment': payment})
+        
+        # Validate file type
+        allowed_extensions = ['jpg', 'jpeg', 'png', 'pdf']
+        file_ext = proof_file.name.split('.')[-1].lower()
+        if file_ext not in allowed_extensions:
+            messages.error(request, 'Please upload a valid image (JPG, PNG) or PDF file.')
+            return render(request, 'hostel/student_make_payment.html', {'payment': payment})
+        
+        # Validate file size (max 5MB)
+        if proof_file.size > 5 * 1024 * 1024:
+            messages.error(request, 'File size must be less than 5MB.')
+            return render(request, 'hostel/student_make_payment.html', {'payment': payment})
+        
+        try:
+            # Generate transaction ID
+            import uuid
+            transaction_id = f"TXN-{uuid.uuid4().hex[:12].upper()}"
+            
+            # Update payment record
+            payment.payment_method = payment_method
+            payment.transaction_id = transaction_id
+            payment.proof_of_payment = proof_file
+            payment.notes = f"{payment.notes}\n\nPayment submitted by student via {payment_method}"
+            if reference_number:
+                payment.notes += f"\nReference Number: {reference_number}"
+            payment.notes += f"\nSubmitted on: {timezone.now().strftime('%Y-%m-%d %H:%M')}"
+            
+            # Mark as pending verification
+            payment.status = 'pending'
+            payment.save()
+            
+            messages.success(request, 
+                'Payment proof uploaded successfully! Your payment will be verified by the admin within 24 hours.')
+            
+            return redirect('student_payment_confirmation', payment_id=payment.id)
+            
+        except Exception as e:
+            messages.error(request, f'Payment submission failed: {str(e)}')
+    
+    context = {
+        'payment': payment,
+    }
+    return render(request, 'hostel/student_make_payment.html', context)
+
+
+@login_required
+def student_payment_confirmation(request, payment_id):
+    """Payment confirmation page for students"""
+    payment = get_object_or_404(Payment, id=payment_id)
+    
+    # Security check
+    if request.user.role == 'student' and payment.occupancy.student != request.user:
+        messages.error(request, 'You can only view your own payments.')
+        return redirect('payment_list')
+    
+    context = {
+        'payment': payment,
+    }
+    return render(request, 'hostel/student_payment_confirmation.html', context)
 
 
 # ==================== ISSUE VIEWS ====================

@@ -2,6 +2,9 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator
 from decimal import Decimal
+import uuid
+from datetime import timedelta
+from django.utils import timezone
 
 class User(AbstractUser):
     ROLE_CHOICES = [
@@ -13,6 +16,7 @@ class User(AbstractUser):
     phone = models.CharField(max_length=15, blank=True)
     address = models.TextField(blank=True)
     profile_picture = models.ImageField(upload_to='profiles/', blank=True, null=True)
+    email_verified = models.BooleanField(default=False)
     
     class Meta:
         db_table = 'users'
@@ -117,6 +121,7 @@ class Payment(models.Model):
     due_date = models.DateField()
     payment_date = models.DateField(null=True, blank=True)
     transaction_id = models.CharField(max_length=100, blank=True)
+    proof_of_payment = models.ImageField(upload_to='payment_proofs/', blank=True, null=True)
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -176,3 +181,32 @@ class Issue(models.Model):
     
     def __str__(self):
         return f"{self.title} - Room {self.room.room_number}"
+
+
+class EmailVerification(models.Model):
+    """Model to store email verification tokens"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='email_verifications')
+    token = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    verified = models.BooleanField(default=False)
+    
+    class Meta:
+        db_table = 'email_verifications'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Verification for {self.user.email}"
+    
+    def save(self, *args, **kwargs):
+        if not self.expires_at:
+            self.expires_at = timezone.now() + timedelta(hours=24)
+        super().save(*args, **kwargs)
+    
+    @property
+    def is_expired(self):
+        return timezone.now() > self.expires_at
+    
+    @property
+    def is_valid(self):
+        return not self.verified and not self.is_expired

@@ -140,10 +140,22 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-
 TAILWIND_APP_NAME = 'theme'
-
 
 INTERNAL_IPS = [
     '127.0.0.1',
 ]
+
+# Email Configuration
+# For development: emails print to console
+#MAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+##DEFAULT_FROM_EMAIL = 'noreply@hostelms.com'
+
+# For production with real email (uncomment and configure):
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # e.g., Gmail SMTP
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'admin@thetechplug.co.zw'
+EMAIL_HOST_PASSWORD = 'iykm unbt jojm yido'  # Use an App Password (see below)
+DEFAULT_FROM_EMAIL = 'admin@thetechplug.co.zw'

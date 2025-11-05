@@ -1,48 +1,127 @@
 {% extends 'hostel/base.html' %}
-{% block title %}Issues{% endblock %}
-{% block content %}
-<h2>Issues</h2>
-<form method="get" class="mb-3">
-  <select name="status" class="form-select w-auto d-inline-block">
-    <option value="">All Status</option>
-    <option value="open" {% if request.GET.status == 'open' %}selected{% endif %}>Open</option>
-    <option value="in_progress" {% if request.GET.status == 'in_progress' %}selected{% endif %}>In Progress</option>
-    <option value="resolved" {% if request.GET.status == 'resolved' %}selected{% endif %}>Resolved</option>
-  </select>
-  <select name="priority" class="form-select w-auto d-inline-block">
-    <option value="">All Priorities</option>
-    <option value="low">Low</option>
-    <option value="medium">Medium</option>
-    <option value="urgent">Urgent</option>
-  </select>
-  <button class="btn btn-dark btn-sm">Filter</button>
-  <a href="{% url 'issue_create' %}" class="btn btn-success float-end">+ Report Issue</a>
-</form>
+{% block title %}Issues - Hostel MS{% endblock %}
+{% block header %}Issues{% endblock %}
+{% block subheader %}Manage and track maintenance issues{% endblock %}
 
-<table class="table table-bordered table-hover">
-  <thead class="table-dark">
-    <tr>
-      <th>Title</th>
-      <th>Room</th>
-      <th>Status</th>
-      <th>Priority</th>
-      <th>Reported By</th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for i in issues %}
-    <tr>
-      <td>{{ i.title }}</td>
-      <td>{{ i.room.room_number }}</td>
-      <td>{{ i.status }}</td>
-      <td>{{ i.priority }}</td>
-      <td>{{ i.reported_by.username }}</td>
-      <td><a href="{% url 'issue_detail' i.id %}" class="btn btn-sm btn-outline-dark">View</a></td>
-    </tr>
-    {% empty %}
-    <tr><td colspan="6" class="text-center">No issues found.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+{% block content %}
+<div class="space-y-6">
+    <!-- Header with Filters and Actions -->
+    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+        <!-- Filters -->
+        <form method="get" class="flex flex-wrap gap-2 items-center">
+            <select name="status" class="select select-bordered select-sm w-full sm:w-auto" onchange="this.form.submit()">
+                <option value="">All Status</option>
+                <option value="open" {% if request.GET.status == 'open' %}selected{% endif %}>Open</option>
+                <option value="in_progress" {% if request.GET.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                <option value="resolved" {% if request.GET.status == 'resolved' %}selected{% endif %}>Resolved</option>
+            </select>
+            <select name="priority" class="select select-bordered select-sm w-full sm:w-auto" onchange="this.form.submit()">
+                <option value="">All Priorities</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="urgent">Urgent</option>
+            </select>
+            {% if request.GET.status or request.GET.priority %}
+            <a href="{% url 'issue_list' %}" class="btn btn-outline btn-sm">Clear Filters</a>
+            {% endif %}
+        </form>
+        
+        <!-- Add Issue Button -->
+        <a href="{% url 'issue_create' %}" class="btn btn-primary w-full sm:w-auto">
+            <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+            Report Issue
+        </a>
+    </div>
+
+    <!-- Issues Table - Desktop -->
+    <div class="hidden md:block card bg-base-100 shadow">
+        <div class="overflow-x-auto">
+            <table class="table table-zebra">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Room</th>
+                        <th>Status</th>
+                        <th>Priority</th>
+                        <th>Reported By</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for i in issues %}
+                    <tr>
+                        <td class="font-semibold">{{ i.title }}</td>
+                        <td>Room {{ i.room.room_number }}</td>
+                        <td>
+                            <span class="badge badge-sm badge-{% if i.status == 'open' %}error{% elif i.status == 'in_progress' %}warning{% else %}success{% endif %}">
+                                {{ i.status|title }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge badge-sm badge-{% if i.priority == 'urgent' %}error{% elif i.priority == 'high' %}warning{% else %}info{% endif %}">
+                                {{ i.priority|title }}
+                            </span>
+                        </td>
+                        <td>{{ i.reported_by.get_full_name|default:i.reported_by.username }}</td>
+                        <td>
+                            <a href="{% url 'issue_detail' i.id %}" class="btn btn-ghost btn-sm">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-8 text-gray-500">No issues found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Issues Cards - Mobile -->
+    <div class="md:hidden space-y-4">
+        {% for i in issues %}
+        <div class="card bg-base-100 shadow">
+            <div class="card-body p-4">
+                <div class="flex justify-between items-start mb-3">
+                    <h3 class="font-bold text-lg">{{ i.title }}</h3>
+                    <a href="{% url 'issue_detail' i.id %}" class="btn btn-ghost btn-sm">
+                        <i data-lucide="eye" class="w-4 h-4"></i>
+                    </a>
+                </div>
+                
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-500">Room:</span>
+                        <span class="font-medium">{{ i.room.room_number }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-500">Status:</span>
+                        <span class="badge badge-sm badge-{% if i.status == 'open' %}error{% elif i.status == 'in_progress' %}warning{% else %}success{% endif %}">
+                            {{ i.status|title }}
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-500">Priority:</span>
+                        <span class="badge badge-sm badge-{% if i.priority == 'urgent' %}error{% elif i.priority == 'high' %}warning{% else %}info{% endif %}">
+                            {{ i.priority|title }}
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-500">Reported By:</span>
+                        <span class="text-sm">{{ i.reported_by.get_full_name|default:i.reported_by.username }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-12">
+            <i data-lucide="alert-triangle" class="w-16 h-16 text-gray-300 mx-auto mb-4"></i>
+            <p class="text-gray-500">No issues found.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
 {% endblock %}

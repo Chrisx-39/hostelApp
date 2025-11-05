@@ -1,0 +1,64 @@
+{% extends 'hostel/base.html' %}
+{% block full_content %}
+<div class="min-h-screen bg-gradient-to-br from-primary to-secondary flex items-center justify-center p-4">
+    <div class="card bg-base-100 shadow-2xl w-full max-w-lg">
+        <div class="card-body text-center">
+            <!-- Success Icon -->
+            <div class="flex justify-center mb-6">
+                <div class="p-6 bg-success bg-opacity-10 rounded-full">
+                    <i data-lucide="mail-check" class="w-16 h-16 text-success"></i>
+                </div>
+            </div>
+
+            <!-- Title -->
+            <h2 class="text-2xl font-bold mb-2">Check Your Email!</h2>
+            <p class="text-gray-600 mb-6">
+                We've sent a verification link to your email address. 
+                Please click the link to verify your account and complete the registration.
+            </p>
+
+            <!-- Instructions -->
+            <div class="alert alert-info">
+                <div class="flex items-start text-left">
+                    <i data-lucide="info" class="w-5 h-5 mr-2 flex-shrink-0 mt-0.5"></i>
+                    <div class="text-sm">
+                        <p class="font-semibold mb-1">What's next?</p>
+                        <ul class="list-disc list-inside space-y-1">
+                            <li>Check your email inbox (and spam folder)</li>
+                            <li>Click the verification link</li>
+                            <li>Login with your credentials</li>
+                        </ul>
+                        <p class="mt-2 text-xs">The verification link expires in 24 hours.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="mt-6 space-y-3">
+                <a href="{% url 'login' %}" class="btn btn-primary btn-block">
+                    <i data-lucide="log-in" class="w-4 h-4 mr-2"></i>
+                    Go to Login
+                </a>
+                
+                <a href="{% url 'resend_verification' %}" class="btn btn-ghost btn-block">
+                    <i data-lucide="refresh-cw" class="w-4 h-4 mr-2"></i>
+                    Resend Verification Email
+                </a>
+            </div>
+
+            <!-- Help Text -->
+            <div class="mt-6 text-sm text-gray-500">
+                <p>Having trouble? Contact support at 
+                    <a href="mailto:support@hostelms.com" class="text-primary hover:underline">
+                        support@hostelms.com
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    lucide.createIcons();
+</script>
+{% endblock %}

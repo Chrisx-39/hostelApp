@@ -1,0 +1,154 @@
+{% extends 'hostel/base.html' %}
+{% block title %}Payment Details - Hostel MS{% endblock %}
+{% block header %}Payment Details{% endblock %}
+{% block subheader %}Review and make payment{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+    <!-- Back Button -->
+    <div>
+        <a href="{% url 'payment_list' %}" class="btn btn-ghost btn-sm">
+            <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i>
+            Back to Payments
+        </a>
+    </div>
+
+    <!-- Payment Information Card -->
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <!-- Status Badge -->
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h2 class="card-title text-2xl">{{ payment.payment_type }}</h2>
+                    <p class="text-gray-500">{{ payment.occupancy.room.room_number }} - Bed {{ payment.occupancy.bed_number }}</p>
+                </div>
+                <span class="badge badge-lg badge-{% if payment.status == 'completed' %}success{% elif payment.status == 'pending' %}warning{% elif payment.status == 'failed' %}error{% else %}info{% endif %}">
+                    {{ payment.status|title }}
+                </span>
+            </div>
+
+            <!-- Payment Details Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 my-6">
+                <div class="p-4 bg-base-200 rounded-lg">
+                    <p class="text-sm text-gray-500 mb-1">Amount</p>
+                    <p class="text-3xl font-bold text-primary">K{{ payment.amount }}</p>
+                </div>
+                
+                <div class="p-4 bg-base-200 rounded-lg">
+                    <p class="text-sm text-gray-500 mb-1">Due Date</p>
+                    <p class="text-xl font-bold">{{ payment.due_date|date:"M d, Y" }}</p>
+                    {% if payment.is_overdue and payment.status == 'pending' %}
+                    <p class="text-error text-sm mt-1">⚠️ Overdue</p>
+                    {% endif %}
+                </div>
+
+                <div class="p-4 bg-base-200 rounded-lg">
+                    <p class="text-sm text-gray-500 mb-1">Payment Type</p>
+                    <p class="font-semibold">{{ payment.payment_type }}</p>
+                </div>
+
+                {% if payment.payment_method %}
+                <div class="p-4 bg-base-200 rounded-lg">
+                    <p class="text-sm text-gray-500 mb-1">Payment Method</p>
+                    <p class="font-semibold">{{ payment.payment_method }}</p>
+                </div>
+                {% endif %}
+
+                {% if payment.transaction_id %}
+                <div class="p-4 bg-base-200 rounded-lg">
+                    <p class="text-sm text-gray-500 mb-1">Transaction ID</p>
+                    <p class="font-mono text-sm">{{ payment.transaction_id }}</p>
+                </div>
+                {% endif %}
+
+                {% if payment.payment_date %}
+                <div class="p-4 bg-base-200 rounded-lg">
+                    <p class="text-sm text-gray-500 mb-1">Payment Date</p>
+                    <p class="font-semibold">{{ payment.payment_date|date:"M d, Y" }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if payment.proof_of_payment %}
+            <div class="mt-4">
+                <h3 class="font-semibold mb-2">Proof of Payment</h3>
+                <div class="p-4 bg-base-200 rounded-lg">
+                    <a href="{{ payment.proof_of_payment.url }}" target="_blank" class="block">
+                        <img src="{{ payment.proof_of_payment.url }}" alt="Proof of Payment" 
+                             class="max-w-full h-auto max-h-96 mx-auto rounded-lg border-2 border-base-300 hover:border-primary transition-colors cursor-pointer">
+                    </a>
+                    <p class="text-xs text-center mt-2 text-gray-500">Click to view full size</p>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if payment.notes %}
+            <div class="mt-4">
+                <h3 class="font-semibold mb-2">Notes</h3>
+                <div class="p-4 bg-base-200 rounded-lg">
+                    <p class="text-sm whitespace-pre-line">{{ payment.notes }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Action Buttons -->
+            <div class="card-actions justify-end mt-6">
+                {% if payment.status == 'pending' %}
+                <a href="{% url 'student_make_payment' payment.id %}" class="btn btn-primary btn-lg">
+                    <i data-lucide="credit-card" class="w-5 h-5 mr-2"></i>
+                    Pay Now - K{{ payment.amount }}
+                </a>
+                {% elif payment.status == 'completed' %}
+                <div class="alert alert-success">
+                    <i data-lucide="check-circle" class="w-5 h-5"></i>
+                    <span>Payment completed successfully!</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment History (if applicable) -->
+    {% if payment.status == 'completed' %}
+    <div class="card bg-base-100 shadow">
+        <div class="card-body">
+            <h3 class="card-title">
+                <i data-lucide="receipt" class="w-5 h-5"></i>
+                Receipt
+            </h3>
+            <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                    <span>Payment Type:</span>
+                    <span class="font-semibold">{{ payment.payment_type }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Amount Paid:</span>
+                    <span class="font-semibold">K{{ payment.amount }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Payment Method:</span>
+                    <span class="font-semibold">{{ payment.payment_method }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Transaction ID:</span>
+                    <span class="font-mono text-xs">{{ payment.transaction_id }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Date:</span>
+                    <span class="font-semibold">{{ payment.payment_date|date:"F d, Y" }}</span>
+                </div>
+            </div>
+            <div class="divider"></div>
+            <button onclick="window.print()" class="btn btn-outline btn-sm">
+                <i data-lucide="printer" class="w-4 h-4 mr-2"></i>
+                Print Receipt
+            </button>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    lucide.createIcons();
+</script>
+{% endblock %}

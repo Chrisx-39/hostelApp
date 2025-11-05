@@ -1,47 +1,102 @@
 {% extends 'hostel/base.html' %}
-{% block title %}Add Occupancy{% endblock %}
+{% block title %}Create Occupancy - Hostel MS{% endblock %}
+{% block header %}Create Occupancy{% endblock %}
+{% block subheader %}Assign a student to a room{% endblock %}
+
 {% block content %}
-<h2>Create Occupancy</h2>
-<form method="POST">
-  {% csrf_token %}
-  <div class="row">
-    <div class="col-md-6 mb-3">
-      <label>Room</label>
-      <select name="room" class="form-select" required>
-        {% for r in rooms %}
-          <option value="{{ r.id }}">{{ r.room_number }} - {{ r.room_type }}</option>
-        {% endfor %}
-      </select>
+<div class="max-w-4xl mx-auto">
+    <div class="card bg-base-100 shadow">
+        <div class="card-body">
+            <form method="POST" class="space-y-6">
+                {% csrf_token %}
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Room Selection -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Room *</span>
+                        </label>
+                        <select name="room" class="select select-bordered" required>
+                            <option value="" disabled selected>Select a room</option>
+                            {% for r in rooms %}
+                            <option value="{{ r.id }}">
+                                Room {{ r.room_number }} - {{ r.room_type }} ({{ r.current_occupancy }}/{{ r.capacity }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <label class="label">
+                            <span class="label-text-alt">Only available rooms are shown</span>
+                        </label>
+                    </div>
+                    
+                    <!-- Student Selection -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Student *</span>
+                        </label>
+                        <select name="student" class="select select-bordered" required>
+                            <option value="" disabled selected>Select a student</option>
+                            {% for s in students %}
+                            <option value="{{ s.id }}">
+                                {{ s.get_full_name|default:s.username }} ({{ s.username }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Check-in Date -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Check-in Date *</span>
+                        </label>
+                        <input type="date" name="check_in_date" class="input input-bordered" required>
+                    </div>
+                    
+                    <!-- Bed Number -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Bed Number *</span>
+                        </label>
+                        <input type="text" name="bed_number" class="input input-bordered" placeholder="e.g., 1, 2, A, B" required>
+                    </div>
+                    
+                    <!-- Emergency Contact Name -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Emergency Contact Name</span>
+                        </label>
+                        <input type="text" name="emergency_contact_name" class="input input-bordered" placeholder="Full name">
+                    </div>
+                    
+                    <!-- Emergency Contact Phone -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Emergency Contact Phone</span>
+                        </label>
+                        <input type="tel" name="emergency_contact_phone" class="input input-bordered" placeholder="+260...">
+                    </div>
+                    
+                    <!-- Notes -->
+                    <div class="form-control md:col-span-2">
+                        <label class="label">
+                            <span class="label-text">Notes</span>
+                        </label>
+                        <textarea name="notes" class="textarea textarea-bordered h-24" placeholder="Additional notes about this occupancy..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="flex flex-col sm:flex-row gap-3 justify-end">
+                    <a href="{% url 'occupancy_list' %}" class="btn btn-ghost order-2 sm:order-1">
+                        Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary order-1 sm:order-2">
+                        <i data-lucide="save" class="w-4 h-4 mr-2"></i>
+                        Create Occupancy
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
-    <div class="col-md-6 mb-3">
-      <label>Student</label>
-      <select name="student" class="form-select" required>
-        {% for s in students %}
-          <option value="{{ s.id }}">{{ s.username }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="col-md-6 mb-3">
-      <label>Check-in Date</label>
-      <input type="date" name="check_in_date" class="form-control" required>
-    </div>
-    <div class="col-md-6 mb-3">
-      <label>Bed Number</label>
-      <input type="text" name="bed_number" class="form-control" required>
-    </div>
-    <div class="col-md-6 mb-3">
-      <label>Emergency Contact Name</label>
-      <input type="text" name="emergency_contact_name" class="form-control">
-    </div>
-    <div class="col-md-6 mb-3">
-      <label>Emergency Contact Phone</label>
-      <input type="text" name="emergency_contact_phone" class="form-control">
-    </div>
-    <div class="col-12 mb-3">
-      <label>Notes</label>
-      <textarea name="notes" class="form-control"></textarea>
-    </div>
-  </div>
-  <button type="submit" class="btn btn-dark">Save</button>
-</form>
+</div>
 {% endblock %}

@@ -1,39 +1,81 @@
 {% extends 'hostel/base.html' %}
-{% block title %}Report Issue{% endblock %}
+{% block title %}Report Issue - Hostel MS{% endblock %}
+{% block header %}Report Issue{% endblock %}
+{% block subheader %}Submit a maintenance or facility issue{% endblock %}
+
 {% block content %}
-<h2>Report an Issue</h2>
-<form method="POST">
-  {% csrf_token %}
-  {% if rooms %}
-  <div class="mb-3">
-    <label>Room</label>
-    <select name="room" class="form-select">
-      {% for r in rooms %}
-        <option value="{{ r.id }}">{{ r.room_number }}</option>
-      {% endfor %}
-    </select>
-  </div>
-  {% endif %}
-  <div class="mb-3">
-    <label>Title</label>
-    <input type="text" name="title" class="form-control" required>
-  </div>
-  <div class="mb-3">
-    <label>Description</label>
-    <textarea name="description" class="form-control" rows="3" required></textarea>
-  </div>
-  <div class="mb-3">
-    <label>Category</label>
-    <input type="text" name="category" class="form-control">
-  </div>
-  <div class="mb-3">
-    <label>Priority</label>
-    <select name="priority" class="form-select">
-      <option value="low">Low</option>
-      <option value="medium" selected>Medium</option>
-      <option value="urgent">Urgent</option>
-    </select>
-  </div>
-  <button type="submit" class="btn btn-dark">Submit Issue</button>
-</form>
+<div class="max-w-3xl mx-auto">
+    <div class="card bg-base-100 shadow">
+        <div class="card-body">
+            <form method="POST" class="space-y-6">
+                {% csrf_token %}
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {% if rooms %}
+                    <!-- Room Selection -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Room *</span>
+                        </label>
+                        <select name="room" class="select select-bordered" required>
+                            <option value="" disabled selected>Select a room</option>
+                            {% for r in rooms %}
+                            <option value="{{ r.id }}">Room {{ r.room_number }} - {{ r.room_type }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Priority -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Priority *</span>
+                        </label>
+                        <select name="priority" class="select select-bordered" required>
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                            <option value="urgent">Urgent</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Title -->
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Issue Title *</span>
+                    </label>
+                    <input type="text" name="title" class="input input-bordered" placeholder="Brief description of the issue" required>
+                </div>
+
+                <!-- Category -->
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Category</span>
+                    </label>
+                    <input type="text" name="category" class="input input-bordered" placeholder="e.g., Plumbing, Electrical, Cleaning">
+                </div>
+
+                <!-- Description -->
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Description *</span>
+                    </label>
+                    <textarea name="description" class="textarea textarea-bordered h-32" placeholder="Provide detailed information about the issue..." required></textarea>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="flex flex-col sm:flex-row gap-3 justify-end">
+                    <a href="{% url 'issue_list' %}" class="btn btn-ghost order-2 sm:order-1">
+                        Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary order-1 sm:order-2">
+                        <i data-lucide="send" class="w-4 h-4 mr-2"></i>
+                        Submit Issue
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}

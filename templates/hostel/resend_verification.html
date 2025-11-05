@@ -1,0 +1,86 @@
+{% extends 'hostel/base.html' %}
+{% block full_content %}
+<div class="min-h-screen bg-gradient-to-br from-primary to-secondary flex items-center justify-center p-4">
+    <div class="card bg-base-100 shadow-2xl w-full max-w-md">
+        <div class="card-body">
+            <!-- Logo -->
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center gap-3 mb-4">
+                    <div class="p-3 bg-primary rounded-2xl">
+                        <i data-lucide="mail" class="w-8 h-8 text-white"></i>
+                    </div>
+                    <div class="text-left">
+                        <h1 class="text-2xl font-bold">Hostel MS</h1>
+                        <p class="text-sm text-gray-500">Management System</p>
+                    </div>
+                </div>
+                <h2 class="text-xl font-semibold">Resend Verification</h2>
+                <p class="text-gray-500">Enter your email to receive a new verification link</p>
+            </div>
+
+            <!-- Messages -->
+            {% if messages %}
+            <div class="space-y-2 mb-4">
+                {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}error{% else %}{{ message.tags }}{% endif %}">
+                    <div class="flex items-center">
+                        {% if message.tags == 'success' %}
+                        <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i>
+                        {% elif message.tags == 'error' %}
+                        <i data-lucide="alert-circle" class="w-4 h-4 mr-2"></i>
+                        {% else %}
+                        <i data-lucide="info" class="w-4 h-4 mr-2"></i>
+                        {% endif %}
+                        <span class="text-sm">{{ message }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Resend Form -->
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="space-y-4">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Email Address</span>
+                        </label>
+                        <input type="email" name="email" class="input input-bordered" 
+                               placeholder="your.email@example.com" required>
+                        <label class="label">
+                            <span class="label-text-alt">The email you used to register</span>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i data-lucide="send" class="w-4 h-4 mr-2"></i>
+                        Resend Verification Email
+                    </button>
+                </div>
+            </form>
+
+            <!-- Links -->
+            <div class="divider">OR</div>
+            <div class="text-center space-y-2">
+                <p class="text-sm text-gray-600">
+                    <a href="{% url 'login' %}" class="text-primary font-semibold hover:underline">
+                        Back to Login
+                    </a>
+                </p>
+                <p class="text-sm text-gray-600">
+                    Don't have an account? 
+                    <a href="{% url 'register' %}" class="text-primary font-semibold hover:underline">
+                        Register here
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    lucide.createIcons();
+</script>
+{% endblock %}

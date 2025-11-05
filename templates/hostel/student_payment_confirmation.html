@@ -1,0 +1,114 @@
+{% extends 'hostel/base.html' %}
+{% block title %}Payment Confirmation - Hostel MS{% endblock %}
+{% block header %}Payment Confirmation{% endblock %}
+{% block subheader %}Your payment has been initiated{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6">
+    <!-- Success Icon -->
+    <div class="flex justify-center">
+        <div class="p-8 bg-success bg-opacity-10 rounded-full">
+            <i data-lucide="check-circle" class="w-20 h-20 text-success"></i>
+        </div>
+    </div>
+
+    <!-- Confirmation Card -->
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body text-center">
+            <h2 class="card-title text-2xl justify-center mb-4">Payment Proof Submitted Successfully!</h2>
+            <p class="text-gray-600 mb-4">Your payment proof has been uploaded and is pending admin verification.</p>
+            
+            <div class="alert alert-success text-left">
+                <i data-lucide="upload-cloud" class="w-6 h-6"></i>
+                <div>
+                    <p class="font-semibold">✅ What happens next?</p>
+                    <p class="text-sm mt-1">
+                        1. Admin will review your payment proof<br>
+                        2. Verification typically takes up to 24 hours<br>
+                        3. You'll see the status update in your payments list<br>
+                        4. Once verified, you can view your receipt
+                    </p>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- Payment Details -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                <div class="p-4 bg-base-200 rounded-lg">
+                    <p class="text-sm text-gray-500">Amount</p>
+                    <p class="text-2xl font-bold text-primary">K{{ payment.amount }}</p>
+                </div>
+                
+                <div class="p-4 bg-base-200 rounded-lg">
+                    <p class="text-sm text-gray-500">Payment Type</p>
+                    <p class="font-semibold">{{ payment.payment_type }}</p>
+                </div>
+
+                <div class="p-4 bg-base-200 rounded-lg">
+                    <p class="text-sm text-gray-500">Payment Method</p>
+                    <p class="font-semibold">{{ payment.payment_method }}</p>
+                </div>
+
+                <div class="p-4 bg-base-200 rounded-lg">
+                    <p class="text-sm text-gray-500">Transaction ID</p>
+                    <p class="font-mono text-xs">{{ payment.transaction_id }}</p>
+                </div>
+            </div>
+
+            <!-- Status Notice -->
+            <div class="alert alert-info mt-6">
+                <i data-lucide="clock" class="w-5 h-5"></i>
+                <div class="text-sm text-left">
+                    <p class="font-semibold">Pending Verification</p>
+                    <p>Your proof of payment is currently being reviewed by the admin. 
+                    You will be notified once your payment has been verified and confirmed.</p>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="card-actions justify-center mt-6 gap-3">
+                <a href="{% url 'payment_list' %}" class="btn btn-primary">
+                    <i data-lucide="list" class="w-4 h-4 mr-2"></i>
+                    View All Payments
+                </a>
+                <a href="{% url 'dashboard' %}" class="btn btn-ghost">
+                    <i data-lucide="home" class="w-4 h-4 mr-2"></i>
+                    Go to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Important Information -->
+    <div class="card bg-base-100 shadow">
+        <div class="card-body">
+            <h3 class="font-semibold flex items-center gap-2">
+                <i data-lucide="info" class="w-5 h-5"></i>
+                Important Information
+            </h3>
+            <ul class="list-disc list-inside space-y-2 text-sm text-gray-600">
+                <li>Keep your transaction ID ({{ payment.transaction_id }}) for reference</li>
+                <li>Admin verification typically takes up to 24 hours</li>
+                <li>Check your payments list for status updates</li>
+                <li>Ensure your proof of payment is clear and legible</li>
+                <li>For urgent issues, contact the hostel office</li>
+                <li>If payment is rejected, you can resubmit with a clearer proof</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Support Contact -->
+    <div class="alert">
+        <i data-lucide="help-circle" class="w-5 h-5"></i>
+        <div class="text-sm">
+            <p class="font-semibold">Need Help?</p>
+            <p>Contact hostel office: +260 XXX XXX XXX or email: payments@hostelms.com</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    lucide.createIcons();
+</script>
+{% endblock %}

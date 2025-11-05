@@ -1,0 +1,196 @@
+{% extends 'hostel/base.html' %}
+{% block title %}Submit Payment - Hostel MS{% endblock %}
+{% block header %}Submit Payment{% endblock %}
+{% block subheader %}Upload your proof of payment{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6">
+    <!-- Back Button -->
+    <div>
+        <a href="{% url 'student_payment_detail' payment.id %}" class="btn btn-ghost btn-sm">
+            <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i>
+            Back to Payment Details
+        </a>
+    </div>
+
+    <!-- Payment Summary -->
+    <div class="alert alert-info">
+        <div class="flex items-center">
+            <i data-lucide="info" class="w-5 h-5 mr-3"></i>
+            <div>
+                <p class="font-semibold">Payment Summary</p>
+                <p class="text-sm">{{ payment.payment_type }} - K{{ payment.amount }}</p>
+                <p class="text-xs">Due: {{ payment.due_date|date:"M d, Y" }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="alert">
+        <i data-lucide="lightbulb" class="w-5 h-5"></i>
+        <div class="text-sm">
+            <p class="font-semibold mb-1">How to submit payment:</p>
+            <ol class="list-decimal list-inside space-y-1">
+                <li>Make your payment via Mobile Money, Bank, or Cash</li>
+                <li>Take a screenshot or photo of the receipt/confirmation</li>
+                <li>Select the payment method you used below</li>
+                <li>Upload the proof of payment</li>
+                <li>Admin will verify and confirm within 24 hours</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- Payment Submission Form -->
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <h2 class="card-title mb-4">
+                <i data-lucide="upload" class="w-6 h-6"></i>
+                Submit Proof of Payment
+            </h2>
+
+            <form method="post" enctype="multipart/form-data" id="paymentForm">
+                {% csrf_token %}
+                
+                <div class="space-y-6">
+                    <!-- Payment Method Selection -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold">How did you pay? *</span>
+                        </label>
+                        <div class="space-y-3">
+                            <label class="flex items-center p-4 border-2 border-base-300 rounded-lg cursor-pointer hover:border-primary transition-colors">
+                                <input type="radio" name="payment_method" value="MTN Mobile Money" class="radio radio-primary" required>
+                                <div class="ml-4 flex-1">
+                                    <p class="font-semibold">MTN Mobile Money</p>
+                                    <p class="text-sm text-gray-500">Paid via MTN MoMo</p>
+                                </div>
+                                <div class="text-xl font-bold text-yellow-500">MTN</div>
+                            </label>
+
+                            <label class="flex items-center p-4 border-2 border-base-300 rounded-lg cursor-pointer hover:border-primary transition-colors">
+                                <input type="radio" name="payment_method" value="Airtel Money" class="radio radio-primary">
+                                <div class="ml-4 flex-1">
+                                    <p class="font-semibold">Airtel Money</p>
+                                    <p class="text-sm text-gray-500">Paid via Airtel Money</p>
+                                </div>
+                                <div class="text-xl font-bold text-red-600">airtel</div>
+                            </label>
+
+                            <label class="flex items-center p-4 border-2 border-base-300 rounded-lg cursor-pointer hover:border-primary transition-colors">
+                                <input type="radio" name="payment_method" value="Bank Transfer" class="radio radio-primary">
+                                <div class="ml-4 flex-1">
+                                    <p class="font-semibold">Bank Transfer</p>
+                                    <p class="text-sm text-gray-500">Paid via bank</p>
+                                </div>
+                                <i data-lucide="building-2" class="w-6 h-6"></i>
+                            </label>
+
+                            <label class="flex items-center p-4 border-2 border-base-300 rounded-lg cursor-pointer hover:border-primary transition-colors">
+                                <input type="radio" name="payment_method" value="Cash" class="radio radio-primary">
+                                <div class="ml-4 flex-1">
+                                    <p class="font-semibold">Cash</p>
+                                    <p class="text-sm text-gray-500">Paid in person</p>
+                                </div>
+                                <i data-lucide="banknote" class="w-6 h-6"></i>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Reference Number (Optional) -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Reference/Transaction Number (Optional)</span>
+                        </label>
+                        <input type="text" name="reference_number" class="input input-bordered" 
+                               placeholder="e.g., TXN123456 or Receipt #">
+                        <label class="label">
+                            <span class="label-text-alt">Enter the transaction ID from your payment receipt</span>
+                        </label>
+                    </div>
+
+                    <!-- File Upload -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold">Upload Proof of Payment *</span>
+                        </label>
+                        <div class="border-2 border-dashed border-base-300 rounded-lg p-6 text-center hover:border-primary transition-colors">
+                            <input type="file" name="proof_of_payment" id="fileInput" 
+                                   class="file-input file-input-bordered file-input-primary w-full" 
+                                   accept="image/*,.pdf" required>
+                            <div class="mt-3 text-sm text-gray-500">
+                                <i data-lucide="upload-cloud" class="w-8 h-8 mx-auto mb-2 text-gray-400"></i>
+                                <p>Upload screenshot or photo of receipt</p>
+                                <p class="text-xs mt-1">Accepted: JPG, PNG, PDF (Max 5MB)</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Preview Area -->
+                    <div id="previewArea" class="hidden">
+                        <label class="label">
+                            <span class="label-text">Preview</span>
+                        </label>
+                        <div class="border border-base-300 rounded-lg p-4">
+                            <img id="imagePreview" class="max-w-full h-auto max-h-64 mx-auto" />
+                            <p id="fileInfo" class="text-sm text-gray-500 mt-2 text-center"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="mt-6 p-4 bg-primary bg-opacity-10 rounded-lg border-2 border-primary">
+                    <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <div>
+                            <p class="text-sm text-gray-600">Total Amount</p>
+                            <p class="text-3xl font-bold text-primary">K{{ payment.amount }}</p>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i data-lucide="send" class="w-5 h-5 mr-2"></i>
+                            Submit Payment
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Security Notice -->
+                <div class="alert mt-4">
+                    <i data-lucide="shield-check" class="w-5 h-5"></i>
+                    <div class="text-xs">
+                        <p>Your proof of payment is secure. Admin will verify your payment within 24 hours.</p>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    lucide.createIcons();
+
+    // File preview
+    const fileInput = document.getElementById('fileInput');
+    const previewArea = document.getElementById('previewArea');
+    const imagePreview = document.getElementById('imagePreview');
+    const fileInfo = document.getElementById('fileInfo');
+    
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            // Show preview for images
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imagePreview.src = e.target.result;
+                    previewArea.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            } else {
+                previewArea.classList.add('hidden');
+            }
+            
+            // Show file info
+            const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
+            fileInfo.textContent = `${file.name} (${sizeInMB} MB)`;
+        }
+    });
+</script>
+{% endblock %}

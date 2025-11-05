@@ -1,32 +1,137 @@
 {% extends 'hostel/base.html' %}
-{% block title %}Issue Detail{% endblock %}
-{% block content %}
-<h2>{{ issue.title }}</h2>
-<p><strong>Room:</strong> {{ issue.room.room_number }}</p>
-<p><strong>Status:</strong> {{ issue.status }}</p>
-<p><strong>Priority:</strong> {{ issue.priority }}</p>
-<p><strong>Reported By:</strong> {{ issue.reported_by.username }}</p>
-<p><strong>Description:</strong> {{ issue.description }}</p>
+{% block title %}{{ issue.title }} - Hostel MS{% endblock %}
+{% block header %}Issue Details{% endblock %}
+{% block subheader %}{{ issue.title }}{% endblock %}
 
-{% if user.role in 'admin manager' %}
-<hr>
-<h5>Update Issue</h5>
-<form method="POST">
-  {% csrf_token %}
-  <div class="mb-3">
-    <label>Status</label>
-    <select name="status" class="form-select">
-      <option value="open">Open</option>
-      <option value="in_progress">In Progress</option>
-      <option value="resolved">Resolved</option>
-      <option value="closed">Closed</option>
-    </select>
-  </div>
-  <div class="mb-3">
-    <label>Resolution Notes</label>
-    <textarea name="resolution_notes" class="form-control" rows="3">{{ issue.resolution_notes }}</textarea>
-  </div>
-  <button type="submit" class="btn btn-dark">Save Changes</button>
-</form>
-{% endif %}
+{% block content %}
+<div class="space-y-6">
+    <!-- Back Button -->
+    <div>
+        <a href="{% url 'issue_list' %}" class="btn btn-ghost btn-sm">
+            <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i>
+            Back to Issues
+        </a>
+    </div>
+
+    <!-- Issue Details -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Main Info -->
+        <div class="lg:col-span-2">
+            <div class="card bg-base-100 shadow">
+                <div class="card-body">
+                    <div class="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold mb-2">{{ issue.title }}</h2>
+                            <p class="text-gray-500">{{ issue.category|default:"General" }}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <span class="badge badge-lg badge-{% if issue.status == 'open' %}error{% elif issue.status == 'in_progress' %}warning{% else %}success{% endif %}">
+                                {{ issue.status|title }}
+                            </span>
+                            <span class="badge badge-lg badge-{% if issue.priority == 'urgent' %}error{% elif issue.priority == 'high' %}warning{% else %}info{% endif %}">
+                                {{ issue.priority|title }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                        <div class="p-4 bg-base-200 rounded-lg">
+                            <p class="text-sm text-gray-500 mb-1">Room</p>
+                            <p class="font-bold text-lg">{{ issue.room.room_number }}</p>
+                        </div>
+                        <div class="p-4 bg-base-200 rounded-lg">
+                            <p class="text-sm text-gray-500 mb-1">Reported By</p>
+                            <p class="font-bold text-lg">{{ issue.reported_by.get_full_name|default:issue.reported_by.username }}</p>
+                        </div>
+                        <div class="p-4 bg-base-200 rounded-lg">
+                            <p class="text-sm text-gray-500 mb-1">Reported Date</p>
+                            <p class="font-bold">{{ issue.reported_date|date:"M d, Y" }}</p>
+                        </div>
+                        <div class="p-4 bg-base-200 rounded-lg">
+                            <p class="text-sm text-gray-500 mb-1">Category</p>
+                            <p class="font-bold">{{ issue.category|default:"N/A" }}</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="font-semibold text-lg mb-2">Description</h3>
+                        <p class="text-gray-700">{{ issue.description }}</p>
+                    </div>
+
+                    {% if issue.resolution_notes %}
+                    <div class="mt-6">
+                        <h3 class="font-semibold text-lg mb-2">Resolution Notes</h3>
+                        <div class="p-4 bg-success bg-opacity-10 rounded-lg border-l-4 border-success">
+                            <p class="text-gray-700">{{ issue.resolution_notes }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="space-y-4">
+            {% if user.role in 'admin manager' %}
+            <!-- Update Issue Form -->
+            <div class="card bg-base-100 shadow">
+                <div class="card-body">
+                    <h3 class="card-title mb-4">
+                        <i data-lucide="edit" class="w-5 h-5"></i>
+                        Update Issue
+                    </h3>
+                    <form method="POST" class="space-y-4">
+                        {% csrf_token %}
+                        
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Status</span>
+                            </label>
+                            <select name="status" class="select select-bordered">
+                                <option value="open" {% if issue.status == 'open' %}selected{% endif %}>Open</option>
+                                <option value="in_progress" {% if issue.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                                <option value="resolved" {% if issue.status == 'resolved' %}selected{% endif %}>Resolved</option>
+                                <option value="closed" {% if issue.status == 'closed' %}selected{% endif %}>Closed</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Resolution Notes</span>
+                            </label>
+                            <textarea name="resolution_notes" class="textarea textarea-bordered h-24" placeholder="Add resolution notes...">{{ issue.resolution_notes }}</textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <i data-lucide="save" class="w-4 h-4 mr-2"></i>
+                            Save Changes
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Quick Info -->
+            <div class="card bg-base-100 shadow">
+                <div class="card-body">
+                    <h3 class="card-title">Quick Info</h3>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Status:</span>
+                            <span class="font-semibold">{{ issue.status|title }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Priority:</span>
+                            <span class="font-semibold">{{ issue.priority|title }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Room:</span>
+                            <span class="font-semibold">{{ issue.room.room_number }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

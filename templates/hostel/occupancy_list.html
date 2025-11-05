@@ -1,42 +1,142 @@
 {% extends 'hostel/base.html' %}
-{% block title %}Occupancies{% endblock %}
-{% block content %}
-<h2>Occupancies</h2>
-<form method="get" class="mb-3">
-  <label>Filter Active:</label>
-  <select name="active" class="form-select w-auto d-inline-block">
-    <option value="">All</option>
-    <option value="true" {% if request.GET.active == 'true' %}selected{% endif %}>Active</option>
-    <option value="false" {% if request.GET.active == 'false' %}selected{% endif %}>Inactive</option>
-  </select>
-  <button class="btn btn-dark btn-sm">Filter</button>
-  {% if user.role in 'admin manager' %}
-    <a href="{% url 'occupancy_create' %}" class="btn btn-success float-end">+ Add Occupancy</a>
-  {% endif %}
-</form>
+{% block title %}Occupancies - Hostel MS{% endblock %}
+{% block header %}Occupancies{% endblock %}
+{% block subheader %}Manage room assignments and student occupancy{% endblock %}
 
-<table class="table table-bordered table-hover">
-  <thead class="table-dark">
-    <tr>
-      <th>Student</th>
-      <th>Room</th>
-      <th>Check-in Date</th>
-      <th>Bed</th>
-      <th>Status</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for occ in occupancies %}
-    <tr>
-      <td>{{ occ.student.username }}</td>
-      <td>{{ occ.room.room_number }}</td>
-      <td>{{ occ.check_in_date }}</td>
-      <td>{{ occ.bed_number }}</td>
-      <td>{% if occ.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}</td>
-    </tr>
-    {% empty %}
-    <tr><td colspan="5" class="text-center">No occupancies found.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+{% block content %}
+<div class="space-y-6">
+    <!-- Header with Filters and Actions -->
+    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+        <!-- Filters -->
+        <form method="get" class="flex flex-wrap gap-2 items-center">
+            <label class="text-sm font-medium">Filter:</label>
+            <select name="active" class="select select-bordered select-sm w-full sm:w-auto" onchange="this.form.submit()">
+                <option value="">All Status</option>
+                <option value="true" {% if request.GET.active == 'true' %}selected{% endif %}>Active</option>
+                <option value="false" {% if request.GET.active == 'false' %}selected{% endif %}>Inactive</option>
+            </select>
+            {% if request.GET.active %}
+            <a href="{% url 'occupancy_list' %}" class="btn btn-outline btn-sm">Clear Filters</a>
+            {% endif %}
+        </form>
+        
+        <!-- Add Occupancy Button -->
+        {% if user.role in 'admin manager' %}
+        <a href="{% url 'occupancy_create' %}" class="btn btn-primary w-full sm:w-auto">
+            <i data-lucide="user-plus" class="w-4 h-4 mr-2"></i>
+            Add Occupancy
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Occupancies Table - Desktop -->
+    <div class="hidden md:block card bg-base-100 shadow">
+        <div class="overflow-x-auto">
+            <table class="table table-zebra">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Room</th>
+                        <th>Bed Number</th>
+                        <th>Check-in Date</th>
+                        <th>Emergency Contact</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for occ in occupancies %}
+                    <tr>
+                        <td>
+                            <div class="flex items-center gap-3">
+                                <div class="avatar">
+                                    <div class="w-8 h-8 rounded-full">
+                                        <img src="https://ui-avatars.com/api/?name={{ occ.student.username }}&background=6366F1&color=fff" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="font-semibold">{{ occ.student.get_full_name|default:occ.student.username }}</div>
+                                    <div class="text-xs text-gray-500">{{ occ.student.username }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="font-medium">Room {{ occ.room.room_number }}</td>
+                        <td>Bed {{ occ.bed_number }}</td>
+                        <td>{{ occ.check_in_date|date:"M d, Y" }}</td>
+                        <td>
+                            <div class="text-sm">
+                                <div>{{ occ.emergency_contact_name|default:"N/A" }}</div>
+                                <div class="text-gray-500">{{ occ.emergency_contact_phone|default:"-" }}</div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge badge-sm badge-{% if occ.is_active %}success{% else %}secondary{% endif %}">
+                                {% if occ.is_active %}Active{% else %}Inactive{% endif %}
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-8 text-gray-500">No occupancies found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Occupancies Cards - Mobile -->
+    <div class="md:hidden space-y-4">
+        {% for occ in occupancies %}
+        <div class="card bg-base-100 shadow">
+            <div class="card-body p-4">
+                <div class="flex justify-between items-start mb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="avatar">
+                            <div class="w-12 h-12 rounded-full">
+                                <img src="https://ui-avatars.com/api/?name={{ occ.student.username }}&background=6366F1&color=fff" />
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="font-bold">{{ occ.student.get_full_name|default:occ.student.username }}</h3>
+                            <p class="text-sm text-gray-500">{{ occ.student.username }}</p>
+                        </div>
+                    </div>
+                    <span class="badge badge-{% if occ.is_active %}success{% else %}secondary{% endif %}">
+                        {% if occ.is_active %}Active{% else %}Inactive{% endif %}
+                    </span>
+                </div>
+                
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-500">Room:</span>
+                        <span class="font-bold">{{ occ.room.room_number }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-500">Bed:</span>
+                        <span class="font-medium">Bed {{ occ.bed_number }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-500">Check-in:</span>
+                        <span class="text-sm">{{ occ.check_in_date|date:"M d, Y" }}</span>
+                    </div>
+                    {% if occ.emergency_contact_name %}
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-500">Emergency Contact:</span>
+                        <div class="text-right text-sm">
+                            <div>{{ occ.emergency_contact_name }}</div>
+                            <div class="text-gray-500">{{ occ.emergency_contact_phone }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-12">
+            <i data-lucide="users" class="w-16 h-16 text-gray-300 mx-auto mb-4"></i>
+            <p class="text-gray-500">No occupancies found.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
 {% endblock %}

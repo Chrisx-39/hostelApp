@@ -1,0 +1,162 @@
+{% extends 'hostel/base.html' %}
+{% block full_content %}
+<div class="min-h-screen bg-gradient-to-br from-primary to-secondary flex items-center justify-center p-4">
+    <div class="card bg-base-100 shadow-2xl w-full max-w-2xl">
+        <div class="card-body">
+            <!-- Logo -->
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center gap-3 mb-4">
+                    <div class="p-3 bg-primary rounded-2xl">
+                        <i data-lucide="building" class="w-8 h-8 text-white"></i>
+                    </div>
+                    <div class="text-left">
+                        <h1 class="text-2xl font-bold">Hostel MS</h1>
+                        <p class="text-sm text-gray-500">Management System</p>
+                    </div>
+                </div>
+                <h2 class="text-xl font-semibold">Create Student Account</h2>
+                <p class="text-gray-500">Register to access hostel services</p>
+            </div>
+
+            <!-- Messages -->
+            {% if messages %}
+            <div class="space-y-2 mb-4">
+                {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}error{% else %}{{ message.tags }}{% endif %}">
+                    <div class="flex items-center">
+                        {% if message.tags == 'success' %}
+                        <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i>
+                        {% elif message.tags == 'error' %}
+                        <i data-lucide="alert-circle" class="w-4 h-4 mr-2"></i>
+                        {% else %}
+                        <i data-lucide="info" class="w-4 h-4 mr-2"></i>
+                        {% endif %}
+                        <span class="text-sm">{{ message }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Registration Form -->
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- First Name -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">First Name *</span>
+                        </label>
+                        <input type="text" name="first_name" 
+                               value="{{ form_data.first_name|default:'' }}"
+                               class="input input-bordered" 
+                               placeholder="John" required>
+                    </div>
+
+                    <!-- Last Name -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Last Name *</span>
+                        </label>
+                        <input type="text" name="last_name" 
+                               value="{{ form_data.last_name|default:'' }}"
+                               class="input input-bordered" 
+                               placeholder="Doe" required>
+                    </div>
+
+                    <!-- Username -->
+                    <div class="form-control md:col-span-2">
+                        <label class="label">
+                            <span class="label-text">Username *</span>
+                        </label>
+                        <input type="text" name="username" 
+                               value="{{ form_data.username|default:'' }}"
+                               class="input input-bordered" 
+                               placeholder="Choose a unique username" 
+                               minlength="3" required>
+                        <label class="label">
+                            <span class="label-text-alt">Minimum 3 characters</span>
+                        </label>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="form-control md:col-span-2">
+                        <label class="label">
+                            <span class="label-text">Email Address *</span>
+                        </label>
+                        <input type="email" name="email" 
+                               value="{{ form_data.email|default:'' }}"
+                               class="input input-bordered" 
+                               placeholder="your.email@example.com" required>
+                        <label class="label">
+                            <span class="label-text-alt">We'll send a verification link to this email</span>
+                        </label>
+                    </div>
+
+                    <!-- Phone -->
+                    <div class="form-control md:col-span-2">
+                        <label class="label">
+                            <span class="label-text">Phone Number (Optional)</span>
+                        </label>
+                        <input type="tel" name="phone" 
+                               value="{{ form_data.phone|default:'' }}"
+                               class="input input-bordered" 
+                               placeholder="+260...">
+                    </div>
+
+                    <!-- Password -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Password *</span>
+                        </label>
+                        <input type="password" name="password" 
+                               class="input input-bordered" 
+                               placeholder="••••••••" 
+                               minlength="6" required>
+                        <label class="label">
+                            <span class="label-text-alt">Minimum 6 characters</span>
+                        </label>
+                    </div>
+
+                    <!-- Confirm Password -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Confirm Password *</span>
+                        </label>
+                        <input type="password" name="password_confirm" 
+                               class="input input-bordered" 
+                               placeholder="••••••••" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block mt-6">
+                    <i data-lucide="user-plus" class="w-4 h-4 mr-2"></i>
+                    Create Account
+                </button>
+            </form>
+
+            <!-- Login Link -->
+            <div class="divider">OR</div>
+            <div class="text-center">
+                <p class="text-sm text-gray-600">
+                    Already have an account? 
+                    <a href="{% url 'login' %}" class="text-primary font-semibold hover:underline">
+                        Sign in here
+                    </a>
+                </p>
+                <p class="text-sm text-gray-600 mt-2">
+                    Didn't receive verification email? 
+                    <a href="{% url 'resend_verification' %}" class="text-primary font-semibold hover:underline">
+                        Resend
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    lucide.createIcons();
+</script>
+{% endblock %}
