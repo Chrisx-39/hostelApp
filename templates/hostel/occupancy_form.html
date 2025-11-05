@@ -1,0 +1,47 @@
+{% extends 'hostel/base.html' %}
+{% block title %}Add Occupancy{% endblock %}
+{% block content %}
+<h2>Create Occupancy</h2>
+<form method="POST">
+  {% csrf_token %}
+  <div class="row">
+    <div class="col-md-6 mb-3">
+      <label>Room</label>
+      <select name="room" class="form-select" required>
+        {% for r in rooms %}
+          <option value="{{ r.id }}">{{ r.room_number }} - {{ r.room_type }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-6 mb-3">
+      <label>Student</label>
+      <select name="student" class="form-select" required>
+        {% for s in students %}
+          <option value="{{ s.id }}">{{ s.username }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-6 mb-3">
+      <label>Check-in Date</label>
+      <input type="date" name="check_in_date" class="form-control" required>
+    </div>
+    <div class="col-md-6 mb-3">
+      <label>Bed Number</label>
+      <input type="text" name="bed_number" class="form-control" required>
+    </div>
+    <div class="col-md-6 mb-3">
+      <label>Emergency Contact Name</label>
+      <input type="text" name="emergency_contact_name" class="form-control">
+    </div>
+    <div class="col-md-6 mb-3">
+      <label>Emergency Contact Phone</label>
+      <input type="text" name="emergency_contact_phone" class="form-control">
+    </div>
+    <div class="col-12 mb-3">
+      <label>Notes</label>
+      <textarea name="notes" class="form-control"></textarea>
+    </div>
+  </div>
+  <button type="submit" class="btn btn-dark">Save</button>
+</form>
+{% endblock %}

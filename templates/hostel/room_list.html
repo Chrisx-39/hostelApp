@@ -1,0 +1,333 @@
+{% extends 'hostel/base.html' %}
+{% block title %}Room Management - Hostel MS{% endblock %}
+{% block header %}Room Management{% endblock %}
+{% block subheader %}Manage hostel rooms and assignments{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        border-left: 4px solid #4f46e5;
+    }
+    
+    .stat-card.vacant { border-left-color: #10b981; }
+    .stat-card.occupied { border-left-color: #f59e0b; }
+    .stat-card.maintenance { border-left-color: #ef4444; }
+    
+    .tabs-container {
+        background: white;
+        border-radius: 0.75rem;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    }
+    
+    .tabs-list {
+        display: flex;
+        border-bottom: 1px solid #e5e7eb;
+        overflow-x: auto;
+    }
+    
+    .tab-trigger {
+        padding: 0.75rem 1.5rem;
+        background: none;
+        border: none;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        font-weight: 500;
+        color: #6b7280;
+        white-space: nowrap;
+        transition: all 0.2s;
+    }
+    
+    .tab-trigger.active {
+        color: #4f46e5;
+        border-bottom-color: #4f46e5;
+    }
+    
+    .tab-trigger:hover:not(.active) {
+        color: #4b5563;
+        background-color: #f9fafb;
+    }
+    
+    .tab-panel {
+        display: none;
+    }
+    
+    .tab-panel.active {
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Stats Overview -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-gray-500 text-sm font-medium">Total Rooms</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ total_count }}</p>
+                </div>
+                <div class="p-2 bg-indigo-100 rounded-lg">
+                    <i data-lucide="door-open" class="w-6 h-6 text-indigo-600"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stat-card vacant">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-gray-500 text-sm font-medium">Vacant Rooms</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ vacant_count }}</p>
+                </div>
+                <div class="p-2 bg-green-100 rounded-lg">
+                    <i data-lucide="check-circle" class="w-6 h-6 text-green-600"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stat-card occupied">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-gray-500 text-sm font-medium">Occupied Rooms</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ occupied_count }}</p>
+                </div>
+                <div class="p-2 bg-amber-100 rounded-lg">
+                    <i data-lucide="user-check" class="w-6 h-6 text-amber-600"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stat-card maintenance">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-gray-500 text-sm font-medium">Maintenance</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ maintenance_count }}</p>
+                </div>
+                <div class="p-2 bg-red-100 rounded-lg">
+                    <i data-lucide="tool" class="w-6 h-6 text-red-600"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header with Actions -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Room Management</h1>
+            <p class="text-gray-600">Manage hostel rooms and assignments</p>
+        </div>
+        
+        {% if user.role in 'admin manager' %}
+        <div class="flex gap-2">
+            <!-- Filter Form -->
+            <form method="get" class="flex gap-2 items-center">
+                <select name="status" class="select select-bordered select-sm" onchange="this.form.submit()">
+                    <option value="">All Status</option>
+                    <option value="available" {% if current_status_filter == 'available' %}selected{% endif %}>Available</option>
+                    <option value="occupied" {% if current_status_filter == 'occupied' %}selected{% endif %}>Occupied</option>
+                    <option value="maintenance" {% if current_status_filter == 'maintenance' %}selected{% endif %}>Maintenance</option>
+                </select>
+                
+                {% if current_status_filter %}
+                <a href="{% url 'room_list' %}" class="btn btn-outline btn-sm">Clear Filters</a>
+                {% endif %}
+            </form>
+
+            <!-- Add Room Button -->
+            <a href="{% url 'room_create' %}" class="btn btn-primary">
+                <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+                Add Room
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Tabs Navigation -->
+    <div class="tabs-container">
+        <div class="tabs-list">
+            <button class="tab-trigger active" data-tab="all" onclick="switchTab('all')">
+                All Rooms ({{ total_count }})
+            </button>
+            <button class="tab-trigger" data-tab="vacant" onclick="switchTab('vacant')">
+                Vacant ({{ vacant_count }})
+            </button>
+            <button class="tab-trigger" data-tab="occupied" onclick="switchTab('occupied')">
+                Occupied ({{ occupied_count }})
+            </button>
+            <button class="tab-trigger" data-tab="maintenance" onclick="switchTab('maintenance')">
+                Maintenance ({{ maintenance_count }})
+            </button>
+        </div>
+    </div>
+
+    <!-- Tab Content -->
+    <div>
+        <!-- All Rooms -->
+        <div id="tab-all" class="tab-panel active">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for room in all_rooms %}
+                <div class="card bg-base-100 shadow hover:shadow-lg transition-shadow">
+                    <div class="card-body">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 class="card-title">Room {{ room.room_number }}</h3>
+                                <p class="text-gray-500 text-sm">Floor {{ room.floor|default:1 }}</p>
+                            </div>
+                            <div class="flex gap-1">
+                                <span class="badge 
+                                    {% if room.status == 'available' %}badge-success
+                                    {% elif room.status == 'occupied' %}badge-warning
+                                    {% else %}badge-error{% endif %}">
+                                    {{ room.status|title }}
+                                </span>
+                                <span class="badge badge-outline badge-sm">
+                                    {{ room.room_type }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-3 mb-4">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600 text-sm">Occupancy:</span>
+                                <span class="font-medium text-sm">{{ room.current_occupancy }}/{{ room.capacity }}</span>
+                            </div>
+                            
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600 text-sm">Monthly Rent:</span>
+                                <span class="font-bold text-gray-900">K{{ room.monthly_rent }}</span>
+                            </div>
+                            
+                            {% if room.occupancies.exists %}
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600 text-sm">Occupants:</span>
+                                <span class="font-medium text-sm">
+                                    {% for occupancy in room.occupancies.all %}
+                                        {% if occupancy.is_active %}
+                                            {{ occupancy.student.get_full_name|default:occupancy.student.username }}{% if not forloop.last %}, {% endif %}
+                                        {% endif %}
+                                    {% endfor %}
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="card-actions">
+                            <a href="{% url 'room_detail' room.id %}" class="btn btn-outline btn-sm flex-1 gap-2">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                                View Details
+                            </a>
+                            {% if user.role in 'admin manager' %}
+                            <a href="{% url 'room_edit' room.id %}" class="btn btn-outline btn-sm flex-1 gap-2">
+                                <i data-lucide="edit" class="w-4 h-4"></i>
+                                Edit
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-span-full text-center py-12">
+                    <i data-lucide="door-closed" class="w-16 h-16 text-gray-300 mx-auto mb-4"></i>
+                    <h3 class="text-lg font-semibold text-gray-500">No rooms found</h3>
+                    <p class="text-gray-400">Get started by adding your first room</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Vacant Rooms -->
+        <div id="tab-vacant" class="tab-panel">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for room in vacant_rooms %}
+                <div class="card bg-base-100 shadow hover:shadow-lg transition-shadow">
+                    <div class="card-body">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 class="card-title">Room {{ room.room_number }}</h3>
+                                <p class="text-gray-500 text-sm">Floor {{ room.floor|default:1 }}</p>
+                            </div>
+                            <span class="badge badge-success">Available</span>
+                        </div>
+
+                        <div class="space-y-3 mb-4">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600 text-sm">Capacity:</span>
+                                <span class="font-medium text-sm">{{ room.capacity }} people</span>
+                            </div>
+                            
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600 text-sm">Monthly Rent:</span>
+                                <span class="font-bold text-gray-900">K{{ room.monthly_rent }}</span>
+                            </div>
+                            
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600 text-sm">Availability:</span>
+                                <span class="font-medium text-sm text-success">Ready for occupancy</span>
+                            </div>
+                        </div>
+
+                        <div class="card-actions">
+                            <a href="{% url 'room_detail' room.id %}" class="btn btn-outline btn-sm flex-1 gap-2">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                                View Details
+                            </a>
+                            {% if user.role in 'admin manager' %}
+                            <a href="{% url 'occupancy_create' %}" class="btn btn-primary btn-sm flex-1 gap-2">
+                                <i data-lucide="user-plus" class="w-4 h-4"></i>
+                                Assign
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-span-full text-center py-12">
+                    <i data-lucide="door-open" class="w-16 h-16 text-gray-300 mx-auto mb-4"></i>
+                    <h3 class="text-lg font-semibold text-gray-500">No vacant rooms</h3>
+                    <p class="text-gray-400">All rooms are currently occupied or under maintenance</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Other tabs would follow similar pattern -->
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Tab switching functionality
+    function switchTab(tabName) {
+        // Update active tab
+        document.querySelectorAll('.tab-trigger').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+        
+        // Show active panel
+        document.querySelectorAll('.tab-panel').forEach(panel => {
+            panel.classList.remove('active');
+        });
+        document.getElementById(`tab-${tabName}`).classList.add('active');
+    }
+
+    // Re-initialize Lucide icons
+    document.addEventListener('DOMContentLoaded', function() {
+        lucide.createIcons();
+    });
+</script>
+{% endblock %}

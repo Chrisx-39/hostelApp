@@ -1,0 +1,63 @@
+{% extends 'hostel/base.html' %}
+{% block title %}Payments{% endblock %}
+{% block content %}
+<h2>Payments</h2>
+<form method="get" class="mb-3">
+  <select name="status" class="form-select w-auto d-inline-block">
+    <option value="">All</option>
+    <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pending</option>
+    <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>Completed</option>
+  </select>
+  <button class="btn btn-dark btn-sm">Filter</button>
+  {% if user.role in 'admin manager' %}
+    <a href="{% url 'payment_create' %}" class="btn btn-success float-end">+ Add Payment</a>
+  {% endif %}
+</form>
+
+<table class="table table-striped">
+  <thead class="table-dark">
+    <tr>
+      <th>Student</th>
+      <th>Room</th>
+      <th>Amount</th>
+      <th>Status</th>
+      <th>Due Date</th>
+      {% if user.role in 'admin manager' %}<th>Actions</th>{% endif %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for pay in payments %}
+    <tr>
+      <td>{{ pay.occupancy.student.username }}</td>
+      <td>{{ pay.occupancy.room.room_number }}</td>
+      <td>${{ pay.amount }}</td>
+      <td>
+        {% if pay.status == 'pending' %}
+          <span class="badge bg-warning text-dark">Pending</span>
+        {% elif pay.status == 'completed' %}
+          <span class="badge bg-success">Completed</span>
+        {% else %}
+          <span class="badge bg-secondary">{{ pay.status }}</span>
+        {% endif %}
+      </td>
+      <td>{{ pay.due_date }}</td>
+      {% if user.role in 'admin manager' %}
+      <td>
+        <form method="post" action="{% url 'payment_update_status' pay.id %}" class="d-inline">
+          {% csrf_token %}
+          <select name="status" class="form-select form-select-sm d-inline w-auto">
+            <option value="pending">Pending</option>
+            <option value="completed">Completed</option>
+          </select>
+          <input type="text" name="transaction_id" placeholder="Txn ID" class="form-control form-control-sm d-inline w-auto">
+          <button class="btn btn-sm btn-dark">Update</button>
+        </form>
+      </td>
+      {% endif %}
+    </tr>
+    {% empty %}
+    <tr><td colspan="6" class="text-center">No payments found.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

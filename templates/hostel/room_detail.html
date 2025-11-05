@@ -1,0 +1,235 @@
+{% extends 'hostel/base.html' %}
+{% block title %}Room {{ room.room_number }} - Hostel MS{% endblock %}
+{% block header %}Room {{ room.room_number }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Room Overview -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Room Info -->
+        <div class="lg:col-span-2">
+            <div class="card bg-base-100 shadow">
+                <div class="card-body">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <h2 class="card-title text-2xl">Room {{ room.room_number }}</h2>
+                            <p class="text-gray-500">{{ room.room_type }} Room</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <span class="badge badge-lg 
+                                {% if room.status == 'available' %}badge-success
+                                {% elif room.status == 'occupied' %}badge-warning
+                                {% else %}badge-error{% endif %}">
+                                {{ room.status|title }}
+                            </span>
+                            {% if user.role in 'admin manager' %}
+                            <a href="{% url 'room_edit' room.id %}" class="btn btn-outline btn-sm">
+                                <i data-lucide="edit" class="w-4 h-4"></i>
+                                Edit
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <div class="text-center p-4 bg-base-200 rounded-lg">
+                            <p class="text-sm text-gray-500">Capacity</p>
+                            <p class="text-xl font-bold">{{ room.capacity }}</p>
+                        </div>
+                        <div class="text-center p-4 bg-base-200 rounded-lg">
+                            <p class="text-sm text-gray-500">Current</p>
+                            <p class="text-xl font-bold">{{ room.current_occupancy }}</p>
+                        </div>
+                        <div class="text-center p-4 bg-base-200 rounded-lg">
+                            <p class="text-sm text-gray-500">Monthly Rent</p>
+                            <p class="text-xl font-bold">K{{ room.monthly_rent }}</p>
+                        </div>
+                        <div class="text-center p-4 bg-base-200 rounded-lg">
+                            <p class="text-sm text-gray-500">Occupancy</p>
+                            <p class="text-xl font-bold">{{ room.occupancy_percentage|floatformat:0 }}%</p>
+                        </div>
+                    </div>
+
+                    {% if room.description %}
+                    <div class="mb-4">
+                        <h3 class="font-semibold mb-2">Description</h3>
+                        <p class="text-gray-700">{{ room.description }}</p>
+                    </div>
+                    {% endif %}
+
+                    {% if room.amenities %}
+                    <div>
+                        <h3 class="font-semibold mb-2">Amenities</h3>
+                        <div class="flex flex-wrap gap-2">
+                            {% for amenity in room.amenities.split %}
+                            <span class="badge badge-outline">{{ amenity }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="space-y-4">
+            {% if user.role in 'admin manager' %}
+            <div class="card bg-base-100 shadow">
+                <div class="card-body">
+                    <h3 class="card-title">Quick Actions</h3>
+                    <div class="space-y-2">
+                        {% if room.is_available %}
+                        <a href="{% url 'occupancy_create' %}?room={{ room.id }}" class="btn btn-primary btn-block">
+                            <i data-lucide="user-plus" class="w-4 h-4 mr-2"></i>
+                            Assign Student
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'issue_create' %}?room={{ room.id }}" class="btn btn-warning btn-block">
+                            <i data-lucide="alert-triangle" class="w-4 h-4 mr-2"></i>
+                            Report Issue
+                        </a>
+                        {% if room.occupancies.exists %}
+                        <a href="{% url 'payment_create' %}" class="btn btn-success btn-block">
+                            <i data-lucide="credit-card" class="w-4 h-4 mr-2"></i>
+                            Record Payment
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Room Status -->
+            <div class="card bg-base-100 shadow">
+                <div class="card-body">
+                    <h3 class="card-title">Room Status</h3>
+                    <div class="space-y-2">
+                        <div class="flex justify-between">
+                            <span>Availability:</span>
+                            <span class="font-semibold {% if room.is_available %}text-success{% else %}text-error{% endif %}">
+                                {{ room.is_available|yesno:"Available,Not Available" }}
+                            </span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Last Updated:</span>
+                            <span class="font-semibold">{{ room.updated_at|date:"M d, Y" }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Occupants -->
+    <div class="card bg-base-100 shadow">
+        <div class="card-body">
+            <h3 class="card-title">
+                <i data-lucide="users" class="w-5 h-5"></i>
+                Current Occupants ({{ occupancies|length }})
+            </h3>
+            
+            {% if occupancies %}
+            <div class="overflow-x-auto">
+                <table class="table table-zebra">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Bed Number</th>
+                            <th>Check-in Date</th>
+                            <th>Emergency Contact</th>
+                            {% if user.role in 'admin manager' %}
+                            <th>Actions</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for occupancy in occupancies %}
+                        <tr>
+                            <td>
+                                <div class="flex items-center gap-3">
+                                    <div class="avatar">
+                                        <div class="w-8 h-8 rounded-full">
+                                            <img src="https://ui-avatars.com/api/?name={{ occupancy.student.username }}&background=6366F1&color=fff" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="font-bold">{{ occupancy.student.get_full_name|default:occupancy.student.username }}</div>
+                                        <div class="text-sm text-gray-500">{{ occupancy.student.username }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ occupancy.bed_number }}</td>
+                            <td>{{ occupancy.check_in_date }}</td>
+                            <td>
+                                <div class="text-sm">
+                                    <div>{{ occupancy.emergency_contact_name }}</div>
+                                    <div class="text-gray-500">{{ occupancy.emergency_contact_phone }}</div>
+                                </div>
+                            </td>
+                            {% if user.role in 'admin manager' %}
+                            <td>
+                                <div class="flex gap-2">
+                                    <a href="{% url 'occupancy_checkout' occupancy.id %}" class="btn btn-error btn-xs">
+                                        <i data-lucide="log-out" class="w-3 h-3"></i>
+                                        Checkout
+                                    </a>
+                                </div>
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-8">
+                <i data-lucide="users" class="w-12 h-12 text-gray-300 mx-auto mb-4"></i>
+                <p class="text-gray-500">No current occupants</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recent Issues -->
+    {% if issues %}
+    <div class="card bg-base-100 shadow">
+        <div class="card-body">
+            <h3 class="card-title">
+                <i data-lucide="alert-triangle" class="w-5 h-5 text-warning"></i>
+                Recent Issues ({{ issues|length }})
+            </h3>
+            
+            <div class="space-y-4">
+                {% for issue in issues %}
+                <div class="flex items-start justify-between p-4 bg-base-200 rounded-lg">
+                    <div class="flex-1">
+                        <h4 class="font-semibold">{{ issue.title }}</h4>
+                        <p class="text-sm text-gray-500 mt-1">{{ issue.description|truncatewords:20 }}</p>
+                        <div class="flex gap-2 mt-2">
+                            <span class="badge badge-sm">{{ issue.category }}</span>
+                            <span class="badge badge-sm badge-{% if issue.priority == 'urgent' %}error{% elif issue.priority == 'high' %}warning{% else %}info{% endif %}">
+                                {{ issue.priority }}
+                            </span>
+                            <span class="badge badge-sm badge-{% if issue.status == 'open' %}error{% elif issue.status == 'in_progress' %}warning{% else %}success{% endif %}">
+                                {{ issue.status }}
+                            </span>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-2">
+                            Reported by {{ issue.reported_by.get_full_name|default:issue.reported_by.username }} on {{ issue.reported_date|date:"M d, Y" }}
+                        </p>
+                    </div>
+                    <a href="{% url 'issue_detail' issue.id %}" class="btn btn-ghost btn-sm">
+                        <i data-lucide="eye" class="w-4 h-4"></i>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="card-actions justify-end mt-4">
+                <a href="{% url 'issue_list' %}?room={{ room.id }}" class="btn btn-outline btn-sm">View All Issues</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

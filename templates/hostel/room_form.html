@@ -1,0 +1,105 @@
+{% extends 'hostel/base.html' %}
+{% block title %}{{ action }} Room - Hostel MS{% endblock %}
+{% block header %}{{ action }} Room{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="card bg-base-100 shadow">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Room Number -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Room Number *</span>
+                        </label>
+                        <input type="text" name="room_number" value="{{ room.room_number|default:'' }}" 
+                               class="input input-bordered" required placeholder="e.g., 101">
+                    </div>
+
+                    <!-- Capacity -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Capacity *</span>
+                        </label>
+                        <input type="number" name="capacity" value="{{ room.capacity|default:'4' }}" 
+                               class="input input-bordered" min="1" max="10" required>
+                    </div>
+
+                    <!-- Room Type -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Room Type *</span>
+                        </label>
+                        <select name="room_type" class="select select-bordered" required>
+                            <option value="Standard" {% if room.room_type == 'Standard' %}selected{% endif %}>Standard</option>
+                            <option value="Deluxe" {% if room.room_type == 'Deluxe' %}selected{% endif %}>Deluxe</option>
+                            <option value="Premium" {% if room.room_type == 'Premium' %}selected{% endif %}>Premium</option>
+                            <option value="Suite" {% if room.room_type == 'Suite' %}selected{% endif %}>Suite</option>
+                        </select>
+                    </div>
+
+                    <!-- Monthly Rent -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Monthly Rent (K) *</span>
+                        </label>
+                        <input type="number" name="monthly_rent" value="{{ room.monthly_rent|default:'1200' }}" 
+                               class="input input-bordered" step="0.01" min="0" required>
+                    </div>
+
+                    <!-- Status (for edit only) -->
+                    {% if action == 'Edit' %}
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Status</span>
+                        </label>
+                        <select name="status" class="select select-bordered">
+                            <option value="available" {% if room.status == 'available' %}selected{% endif %}>Available</option>
+                            <option value="occupied" {% if room.status == 'occupied' %}selected{% endif %}>Occupied</option>
+                            <option value="maintenance" {% if room.status == 'maintenance' %}selected{% endif %}>Maintenance</option>
+                        </select>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Description -->
+                <div class="form-control mt-4">
+                    <label class="label">
+                        <span class="label-text">Description</span>
+                    </label>
+                    <textarea name="description" class="textarea textarea-bordered h-24" 
+                              placeholder="Room description...">{{ room.description|default:'' }}</textarea>
+                </div>
+
+                <!-- Amenities -->
+                <div class="form-control mt-4">
+                    <label class="label">
+                        <span class="label-text">Amenities</span>
+                        <span class="label-text-alt">Comma separated</span>
+                    </label>
+                    <input type="text" name="amenities" value="{{ room.amenities|default:'' }}" 
+                           class="input input-bordered" placeholder="e.g., WiFi, AC, TV, Furniture">
+                </div>
+
+                <!-- Form Actions -->
+                <div class="card-actions justify-end mt-6">
+                    <a href="{% if room %}{% url 'room_detail' room.id %}{% else %}{% url 'room_list' %}{% endif %}" 
+                       class="btn btn-ghost">Cancel</a>
+                    <button type="submit" class="btn btn-primary">
+                        {% if action == 'Create' %}
+                        <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+                        Create Room
+                        {% else %}
+                        <i data-lucide="save" class="w-4 h-4 mr-2"></i>
+                        Update Room
+                        {% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

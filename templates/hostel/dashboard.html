@@ -1,0 +1,224 @@
+{% extends 'hostel/base.html' %}
+{% block title %}Dashboard - Hostel MS{% endblock %}
+{% block header %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="stats shadow">
+            <div class="stat">
+                <div class="stat-figure text-primary">
+                    <i data-lucide="door-open" class="w-8 h-8"></i>
+                </div>
+                <div class="stat-title">Total Rooms</div>
+                <div class="stat-value">{{ total_rooms }}</div>
+                <div class="stat-desc">{{ occupied_rooms }} occupied</div>
+            </div>
+        </div>
+        
+        <div class="stats shadow">
+            <div class="stat">
+                <div class="stat-figure text-secondary">
+                    <i data-lucide="users" class="w-8 h-8"></i>
+                </div>
+                <div class="stat-title">Students</div>
+                <div class="stat-value">{{ total_students }}</div>
+                <div class="stat-desc">{{ active_occupancies }} active</div>
+            </div>
+        </div>
+
+        {% if user.role in 'admin manager' %}
+        <div class="stats shadow">
+            <div class="stat">
+                <div class="stat-figure text-accent">
+                    <i data-lucide="credit-card" class="w-8 h-8"></i>
+                </div>
+                <div class="stat-title">Pending Payments</div>
+                <div class="stat-value">{{ pending_payments }}</div>
+                <div class="stat-desc">{{ overdue_payments }} overdue</div>
+            </div>
+        </div>
+
+        <div class="stats shadow">
+            <div class="stat">
+                <div class="stat-figure text-warning">
+                    <i data-lucide="alert-triangle" class="w-8 h-8"></i>
+                </div>
+                <div class="stat-title">Open Issues</div>
+                <div class="stat-value">{{ open_issues }}</div>
+                <div class="stat-desc">{{ urgent_issues }} urgent</div>
+            </div>
+        </div>
+        {% else %}
+        <div class="stats shadow">
+            <div class="stat">
+                <div class="stat-figure text-accent">
+                    <i data-lucide="credit-card" class="w-8 h-8"></i>
+                </div>
+                <div class="stat-title">My Payments</div>
+                <div class="stat-value">{{ pending_payments }}</div>
+                <div class="stat-desc">Pending</div>
+            </div>
+        </div>
+
+        <div class="stats shadow">
+            <div class="stat">
+                <div class="stat-figure text-warning">
+                    <i data-lucide="alert-triangle" class="w-8 h-8"></i>
+                </div>
+                <div class="stat-title">My Issues</div>
+                <div class="stat-value">{{ my_issues.count }}</div>
+                <div class="stat-desc">Reported</div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {% if user.role in 'admin manager' %}
+        <!-- Recent Issues -->
+        <div class="card bg-base-100 shadow">
+            <div class="card-body">
+                <h3 class="card-title">
+                    <i data-lucide="alert-triangle" class="w-5 h-5 text-warning"></i>
+                    Recent Issues
+                </h3>
+                <div class="space-y-4">
+                    {% for issue in recent_issues %}
+                    <div class="flex items-start justify-between p-3 bg-base-200 rounded-lg">
+                        <div class="flex-1">
+                            <h4 class="font-semibold text-sm">{{ issue.title }}</h4>
+                            <p class="text-xs text-gray-500">Room {{ issue.room.room_number }} • {{ issue.reported_by.get_full_name }}</p>
+                            <div class="flex gap-2 mt-1">
+                                <span class="badge badge-sm badge-{% if issue.priority == 'urgent' %}error{% elif issue.priority == 'high' %}warning{% else %}info{% endif %}">
+                                    {{ issue.priority }}
+                                </span>
+                                <span class="badge badge-sm badge-{% if issue.status == 'open' %}error{% elif issue.status == 'in_progress' %}warning{% else %}success{% endif %}">
+                                    {{ issue.status }}
+                                </span>
+                            </div>
+                        </div>
+                        <a href="{% url 'issue_detail' issue.id %}" class="btn btn-ghost btn-sm">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </a>
+                    </div>
+                    {% empty %}
+                    <p class="text-gray-500 text-center py-4">No recent issues</p>
+                    {% endfor %}
+                </div>
+                <div class="card-actions justify-end mt-4">
+                    <a href="{% url 'issue_list' %}" class="btn btn-primary btn-sm">View All Issues</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Payments -->
+        <div class="card bg-base-100 shadow">
+            <div class="card-body">
+                <h3 class="card-title">
+                    <i data-lucide="credit-card" class="w-5 h-5 text-success"></i>
+                    Recent Payments
+                </h3>
+                <div class="space-y-4">
+                    {% for payment in recent_payments %}
+                    <div class="flex items-center justify-between p-3 bg-base-200 rounded-lg">
+                        <div>
+                            <h4 class="font-semibold text-sm">{{ payment.occupancy.student.get_full_name }}</h4>
+                            <p class="text-xs text-gray-500">Room {{ payment.occupancy.room.room_number }} • {{ payment.payment_type }}</p>
+                            <p class="text-sm font-medium">K{{ payment.amount }}</p>
+                        </div>
+                        <span class="badge badge-{% if payment.status == 'completed' %}success{% elif payment.status == 'pending' %}warning{% else %}error{% endif %}">
+                            {{ payment.status }}
+                        </span>
+                    </div>
+                    {% empty %}
+                    <p class="text-gray-500 text-center py-4">No recent payments</p>
+                    {% endfor %}
+                </div>
+                <div class="card-actions justify-end mt-4">
+                    <a href="{% url 'payment_list' %}" class="btn btn-primary btn-sm">View All Payments</a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <!-- Student Dashboard -->
+        {% if current_occupancy %}
+        <!-- Current Occupancy -->
+        <div class="card bg-base-100 shadow">
+            <div class="card-body">
+                <h3 class="card-title">
+                    <i data-lucide="home" class="w-5 h-5 text-primary"></i>
+                    My Current Room
+                </h3>
+                <div class="p-4 bg-primary text-primary-content rounded-lg">
+                    <h4 class="text-lg font-bold">Room {{ current_occupancy.room.room_number }}</h4>
+                    <p class="text-sm">Bed {{ current_occupancy.bed_number }}</p>
+                    <p class="text-sm">Check-in: {{ current_occupancy.check_in_date }}</p>
+                    <p class="text-sm">Monthly Rent: K{{ current_occupancy.room.monthly_rent }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- My Recent Payments -->
+        <div class="card bg-base-100 shadow">
+            <div class="card-body">
+                <h3 class="card-title">
+                    <i data-lucide="credit-card" class="w-5 h-5 text-success"></i>
+                    My Recent Payments
+                </h3>
+                <div class="space-y-3">
+                    {% for payment in my_payments %}
+                    <div class="flex justify-between items-center p-3 bg-base-200 rounded-lg">
+                        <div>
+                            <p class="font-medium">K{{ payment.amount }}</p>
+                            <p class="text-sm text-gray-500">{{ payment.payment_type }} • Due: {{ payment.due_date }}</p>
+                        </div>
+                        <span class="badge badge-{% if payment.status == 'completed' %}success{% else %}warning{% endif %}">
+                            {{ payment.status }}
+                        </span>
+                    </div>
+                    {% empty %}
+                    <p class="text-gray-500 text-center py-4">No payment records</p>
+                    {% endfor %}
+                </div>
+                <div class="card-actions justify-end mt-4">
+                    <a href="{% url 'payment_list' %}" class="btn btn-primary btn-sm">View All Payments</a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-span-2 text-center py-12">
+            <i data-lucide="home" class="w-16 h-16 text-gray-300 mx-auto mb-4"></i>
+            <h3 class="text-xl font-semibold text-gray-500">No Active Room Assignment</h3>
+            <p class="text-gray-400 mt-2">You are not currently assigned to any room.</p>
+        </div>
+        {% endif %}
+        {% endif %}
+    </div>
+
+    <!-- Quick Actions -->
+    {% if user.role in 'admin manager' %}
+    <div class="card bg-base-100 shadow">
+        <div class="card-body">
+            <h3 class="card-title">Quick Actions</h3>
+            <div class="flex flex-wrap gap-4">
+                <a href="{% url 'room_create' %}" class="btn btn-primary">
+                    <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+                    Add Room
+                </a>
+                <a href="{% url 'occupancy_create' %}" class="btn btn-secondary">
+                    <i data-lucide="user-plus" class="w-4 h-4 mr-2"></i>
+                    Assign Room
+                </a>
+                <a href="{% url 'payment_create' %}" class="btn btn-accent">
+                    <i data-lucide="credit-card" class="w-4 h-4 mr-2"></i>
+                    Record Payment
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

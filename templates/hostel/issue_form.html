@@ -1,0 +1,39 @@
+{% extends 'hostel/base.html' %}
+{% block title %}Report Issue{% endblock %}
+{% block content %}
+<h2>Report an Issue</h2>
+<form method="POST">
+  {% csrf_token %}
+  {% if rooms %}
+  <div class="mb-3">
+    <label>Room</label>
+    <select name="room" class="form-select">
+      {% for r in rooms %}
+        <option value="{{ r.id }}">{{ r.room_number }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  {% endif %}
+  <div class="mb-3">
+    <label>Title</label>
+    <input type="text" name="title" class="form-control" required>
+  </div>
+  <div class="mb-3">
+    <label>Description</label>
+    <textarea name="description" class="form-control" rows="3" required></textarea>
+  </div>
+  <div class="mb-3">
+    <label>Category</label>
+    <input type="text" name="category" class="form-control">
+  </div>
+  <div class="mb-3">
+    <label>Priority</label>
+    <select name="priority" class="form-select">
+      <option value="low">Low</option>
+      <option value="medium" selected>Medium</option>
+      <option value="urgent">Urgent</option>
+    </select>
+  </div>
+  <button type="submit" class="btn btn-dark">Submit Issue</button>
+</form>
+{% endblock %}

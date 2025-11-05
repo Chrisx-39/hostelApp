@@ -1,0 +1,32 @@
+{% extends 'hostel/base.html' %}
+{% block title %}Issue Detail{% endblock %}
+{% block content %}
+<h2>{{ issue.title }}</h2>
+<p><strong>Room:</strong> {{ issue.room.room_number }}</p>
+<p><strong>Status:</strong> {{ issue.status }}</p>
+<p><strong>Priority:</strong> {{ issue.priority }}</p>
+<p><strong>Reported By:</strong> {{ issue.reported_by.username }}</p>
+<p><strong>Description:</strong> {{ issue.description }}</p>
+
+{% if user.role in 'admin manager' %}
+<hr>
+<h5>Update Issue</h5>
+<form method="POST">
+  {% csrf_token %}
+  <div class="mb-3">
+    <label>Status</label>
+    <select name="status" class="form-select">
+      <option value="open">Open</option>
+      <option value="in_progress">In Progress</option>
+      <option value="resolved">Resolved</option>
+      <option value="closed">Closed</option>
+    </select>
+  </div>
+  <div class="mb-3">
+    <label>Resolution Notes</label>
+    <textarea name="resolution_notes" class="form-control" rows="3">{{ issue.resolution_notes }}</textarea>
+  </div>
+  <button type="submit" class="btn btn-dark">Save Changes</button>
+</form>
+{% endif %}
+{% endblock %}

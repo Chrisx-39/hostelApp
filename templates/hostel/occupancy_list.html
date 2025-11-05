@@ -1,0 +1,42 @@
+{% extends 'hostel/base.html' %}
+{% block title %}Occupancies{% endblock %}
+{% block content %}
+<h2>Occupancies</h2>
+<form method="get" class="mb-3">
+  <label>Filter Active:</label>
+  <select name="active" class="form-select w-auto d-inline-block">
+    <option value="">All</option>
+    <option value="true" {% if request.GET.active == 'true' %}selected{% endif %}>Active</option>
+    <option value="false" {% if request.GET.active == 'false' %}selected{% endif %}>Inactive</option>
+  </select>
+  <button class="btn btn-dark btn-sm">Filter</button>
+  {% if user.role in 'admin manager' %}
+    <a href="{% url 'occupancy_create' %}" class="btn btn-success float-end">+ Add Occupancy</a>
+  {% endif %}
+</form>
+
+<table class="table table-bordered table-hover">
+  <thead class="table-dark">
+    <tr>
+      <th>Student</th>
+      <th>Room</th>
+      <th>Check-in Date</th>
+      <th>Bed</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for occ in occupancies %}
+    <tr>
+      <td>{{ occ.student.username }}</td>
+      <td>{{ occ.room.room_number }}</td>
+      <td>{{ occ.check_in_date }}</td>
+      <td>{{ occ.bed_number }}</td>
+      <td>{% if occ.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5" class="text-center">No occupancies found.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
