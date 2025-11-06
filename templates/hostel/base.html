@@ -5,6 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="{% static 'icons/icon-192.png' %}">
     <title>{% block title %}Hostel Management System{% endblock %}</title>
 
     <!-- Tailwind CSS + DaisyUI -->
@@ -125,7 +126,7 @@
                 <span class="font-medium">Rooms</span>
             </a>
 
-            {% if user.role in ['admin', 'manager'] %}
+            {% if user.role == 'admin' or user.role == 'manager' %}
             <a href="{% url 'occupancy_list' %}" class="flex items-center gap-3 px-3 py-3 rounded-xl transition {% if 'occupancy' in request.resolver_match.url_name %}bg-primary text-white shadow-lg{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %}">
                 <i data-lucide="users" class="w-5 h-5"></i>
                 <span class="font-medium">Occupancies</span>
